@@ -502,6 +502,51 @@ async def restore_purchase(user_id: str):
 
 # ================== ADMIN ROUTES ==================
 
+@api_router.post("/admin/upload-file")
+async def upload_file(
+    file: UploadFile = File(...),
+    folder: str = Form(...),
+    admin=Depends(admin_auth)
+):
+    allowed_folders = ["audio", "ringtone", "thumbnails"]
+
+    if folder not in allowed_folders:
+        raise HTTPException(status_code=400, detail="Invalid folder")
+
+    filename = f"{uuid.uuid4()}_{file.filename}"
+
+    ftp_host = os.environ["FTP_HOST"]
+    ftp_user = os.environ["FTP_USER"]
+    ftp_pass = os.environ["FTP_PASS"]
+    ftp_port = int(os.environ.get("FTP_PORT", 21))
+
+    try:
+        async with aioftp.Client.context(
+            ftp_host,
+            port=ftp_port,
+            user=ftp_user,
+            password=ftp_pass
+        ) as client:
+
+            await client.change_directory(f"/public_html/{folder}")
+
+            async with client.upload_stream(filename) as stream:
+                while True:
+                    chunk = await file.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    await stream.write(chunk)
+
+    except Exception as e:
+        print("FTP UPLOAD ERROR:", str(e))
+        raise HTTPException(status_code=500, detail="FTP upload failed")
+
+    return {
+        "url": f"https://azjankari.in/{folder}/{filename}",
+        "filename": filename
+    }
+
+
 @api_router.post("/admin/login")
 async def admin_login(data: AdminLogin):
     admin = await db.admins.find_one({"email": data.email})
@@ -529,39 +574,6 @@ async def admin_login(data: AdminLogin):
     )
 
     return {"token": token}
-
-
-@api_router.post("/admin/upload-file")
-async def upload_file(
-    file: UploadFile = File(...),
-    folder: str = Form(...),
-    admin=Depends(admin_auth)
-):
-    allowed_folders = ["audio", "ringtone", "thumbnails"]
-
-    if folder not in allowed_folders:
-        raise HTTPException(status_code=400, detail="Invalid folder")
-
-    filename = f"{uuid.uuid4()}_{file.filename}"
-
-    ftp_host = os.environ["FTP_HOST"]
-    ftp_user = os.environ["FTP_USER"]
-    ftp_pass = os.environ["FTP_PASS"]
-
-    async with aioftp.Client.context(
-    ftp_host,
-    port=int(os.environ.get("FTP_PORT", 21)),
-    user=ftp_user,
-    password=ftp_pass
-    ) as client:
-        await client.change_directory(f"/public_html/{folder}")
-        await client.upload_stream(file.file, filename)
-
-    return {
-        "url": f"https://diwanstechsol.com/{folder}/{filename}",
-        "filename": filename
-    }
-
 
 
 
