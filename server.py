@@ -10,6 +10,10 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
 from datetime import datetime, timedelta
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from fastapi import Depends, Header
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -118,13 +122,17 @@ class SubscriptionCreate(BaseModel):
     user_id: str
     plan: str = "monthly"
 
+class AdminLogin(BaseModel):
+    email: str
+    password: str
+
 
 # ================== SAMPLE DATA ==================
 # Using placeholder URLs - Replace with your Hostinger URLs
 
 SAMPLE_INSTRUMENTALS = [
     # Featured Instrumentals (multiple for carousel)
-    {"title": "Mawla Ya Salli - Peaceful", "mood": "Spiritual", "duration": 245, "duration_formatted": "4:05", "is_premium": False, "is_featured": True, "thumbnail_color": "#4A3463", "thumbnail": "https://pod-engine-public.nyc3.cdn.digitaloceanspaces.com/images/jHga4s2CmiyaibFlOfJVL25LfdfjqmZpbJ6ehRzVVCQ.png", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", "file_size": 4500000},
+    {"title": "Mawla Ya Salli - Peaceful", "mood": "Spiritual", "duration": 245, "duration_formatted": "4:05", "is_premium": False, "is_featured": True, "thumbnail": "https://pod-engine-public.nyc3.cdn.digitaloceanspaces.com/images/jHga4s2CmiyaibFlOfJVL25LfdfjqmZpbJ6ehRzVVCQ.png", "thumbnail_color": "#4A3463", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", "ringtone": "https://azjankari.in/audio/song2.mp3", "file_size": 4500000, "preview_start": 60, "preview_end": 90},
     {"title": "Nasheed of Dawn", "mood": "Calm", "duration": 312, "duration_formatted": "5:12", "is_premium": True, "is_featured": True, "thumbnail_color": "#2D5A4A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", "ringtone": "https://azjankari.in/audio/song2.mp3", "file_size": 5200000, "preview_start": 70, "preview_end": 100},
     {"title": "Sacred Sunset Melody", "mood": "Soft", "duration": 280, "duration_formatted": "4:40", "is_premium": False, "is_featured": True, "thumbnail_color": "#8B4513", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", "file_size": 4800000, "preview_start": 60, "preview_end": 90},
     {"title": "Blessed Night Journey", "mood": "Spiritual", "duration": 350, "duration_formatted": "5:50", "is_premium": True, "is_featured": True, "thumbnail_color": "#1E3A5F", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", "file_size": 6000000, "preview_start": 80, "preview_end": 110},
@@ -164,6 +172,18 @@ async def seed_database():
         await db.instrumentals.insert_one(instrumental.dict())
     return {"message": f"Seeded {len(SAMPLE_INSTRUMENTALS)} instrumentals"}
 
+async def admin_auth(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    try:
+        token = authorization.split(" ")[1]
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
 
 # ================== INSTRUMENTAL ROUTES ==================
 
@@ -200,7 +220,9 @@ async def get_instrumental(instrumental_id: str):
 
 
 @api_router.post("/instrumentals", response_model=Instrumental)
-async def create_instrumental(data: InstrumentalCreate):
+async def create_instrumental(
+    data: InstrumentalCreate,
+    admin=Depends(admin_auth)):
     """Create a new instrumental (Admin)"""
     instrumental = Instrumental(**data.dict())
     await db.instrumentals.insert_one(instrumental.dict())
@@ -208,7 +230,7 @@ async def create_instrumental(data: InstrumentalCreate):
 
 
 @api_router.put("/instrumentals/{instrumental_id}", response_model=Instrumental)
-async def update_instrumental(instrumental_id: str, data: InstrumentalUpdate):
+async def update_instrumental(instrumental_id: str, data: InstrumentalUpdate, admin=Depends(admin_auth)):
     """Update an instrumental (Admin)"""
     update_data = {k: v for k, v in data.dict().items() if v is not None}
     if not update_data:
@@ -226,7 +248,7 @@ async def update_instrumental(instrumental_id: str, data: InstrumentalUpdate):
 
 
 @api_router.delete("/instrumentals/{instrumental_id}")
-async def delete_instrumental(instrumental_id: str):
+async def delete_instrumental(instrumental_id: str, admin=Depends(admin_auth)):
     """Delete an instrumental (Admin)"""
     result = await db.instrumentals.delete_one({"id": instrumental_id})
     if result.deleted_count == 0:
@@ -470,8 +492,27 @@ async def restore_purchase(user_id: str):
 
 # ================== ADMIN ROUTES ==================
 
+@api_router.post("/admin/login")
+async def admin_login(data: AdminLogin):
+    admin = await db.admins.find_one({"email": data.email})
+
+    if not admin:
+        raise HTTPException(status_code=401, detail="Invalid login")
+
+    if not pwd_context.verify(data.password, admin["password"]):
+        raise HTTPException(status_code=401, detail="Invalid login")
+
+    token = jwt.encode(
+        {"admin_id": str(admin["_id"]), "exp": datetime.utcnow() + timedelta(days=7)},
+        JWT_SECRET,
+        algorithm=JWT_ALGORITHM
+    )
+
+    return {"token": token}
+
+
 @api_router.get("/admin/stats")
-async def get_stats():
+async def get_stats(admin=Depends(admin_auth)):
     """Get app statistics"""
     return {
         "total_instrumentals": await db.instrumentals.count_documents({}),
