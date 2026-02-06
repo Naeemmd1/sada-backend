@@ -525,8 +525,7 @@ async def upload_file(
             ftp_host,
             port=ftp_port,
             user=ftp_user,
-            password=ftp_pass,
-            passive=True
+            password=ftp_pass
         ) as client:
 
             await client.change_directory(f"/public_html/{folder}")
@@ -543,9 +542,10 @@ async def upload_file(
         raise HTTPException(status_code=500, detail="FTP upload failed")
 
     return {
-        "url": f"https://azjankari.in/{folder}/{filename}",
+        "url": f"https://diwanstechsol.com/{folder}/{filename}",
         "filename": filename
     }
+
 
 
 @api_router.post("/admin/login")
