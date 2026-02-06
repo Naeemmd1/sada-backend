@@ -14,6 +14,14 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, Header
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+JWT_SECRET = os.environ.get("JWT_SECRET")
+JWT_ALGORITHM = "HS256"
+
+if not JWT_SECRET:
+    raise Exception("JWT_SECRET is not set in environment variables")
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
