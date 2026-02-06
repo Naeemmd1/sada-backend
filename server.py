@@ -525,7 +525,8 @@ async def upload_file(
             ftp_host,
             port=ftp_port,
             user=ftp_user,
-            password=ftp_pass
+            password=ftp_pass,
+            passive=True
         ) as client:
 
             await client.change_directory(f"/public_html/{folder}")
