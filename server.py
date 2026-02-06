@@ -504,19 +504,30 @@ async def restore_purchase(user_id: str):
 async def admin_login(data: AdminLogin):
     admin = await db.admins.find_one({"email": data.email})
 
-    if not admin:
+    if not admin or "password" not in admin:
         raise HTTPException(status_code=401, detail="Invalid login")
 
-    if not pwd_context.verify(data.password, admin["password"]):
+    try:
+        password_hash = str(admin["password"])
+
+        if not pwd_context.verify(data.password, password_hash):
+            raise HTTPException(status_code=401, detail="Invalid login")
+
+    except Exception as e:
+        # Any bcrypt/parsing issue should NOT crash server
         raise HTTPException(status_code=401, detail="Invalid login")
 
     token = jwt.encode(
-        {"admin_id": str(admin["_id"]), "exp": datetime.utcnow() + timedelta(days=7)},
+        {
+            "admin_id": str(admin["_id"]),
+            "exp": datetime.utcnow() + timedelta(days=7)
+        },
         JWT_SECRET,
         algorithm=JWT_ALGORITHM
     )
 
     return {"token": token}
+
 
 
 @api_router.get("/admin/stats")
