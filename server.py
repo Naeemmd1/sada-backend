@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, Header
+import aioftp
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -527,6 +529,39 @@ async def admin_login(data: AdminLogin):
     )
 
     return {"token": token}
+
+
+@api_router.post("/admin/upload-file")
+async def upload_file(
+    file: UploadFile = File(...),
+    folder: str = Form(...),
+    admin=Depends(admin_auth)
+):
+    allowed_folders = ["audio", "ringtone", "thumbnails"]
+
+    if folder not in allowed_folders:
+        raise HTTPException(status_code=400, detail="Invalid folder")
+
+    filename = f"{uuid.uuid4()}_{file.filename}"
+
+    ftp_host = os.environ["FTP_HOST"]
+    ftp_user = os.environ["FTP_USER"]
+    ftp_pass = os.environ["FTP_PASS"]
+
+    async with aioftp.Client.context(
+    ftp_host,
+    port=int(os.environ.get("FTP_PORT", 21)),
+    user=ftp_user,
+    password=ftp_pass
+    ) as client:
+        await client.change_directory(f"/public_html/{folder}")
+        await client.upload_stream(file.file, filename)
+
+    return {
+        "url": f"https://diwanstechsol.com/{folder}/{filename}",
+        "filename": filename
+    }
+
 
 
 
