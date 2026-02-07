@@ -175,12 +175,16 @@ async def root():
 
 @api_router.post("/seed")
 async def seed_database():
-    """Seed the database with sample instrumentals"""
-    await db.instrumentals.delete_many({})
+    count = await db.instrumentals.count_documents({})
+    if count > 0:
+        return {"message": "Database already seeded, skipping"}
+
     for item in SAMPLE_INSTRUMENTALS:
         instrumental = Instrumental(**item)
         await db.instrumentals.insert_one(instrumental.dict())
+
     return {"message": f"Seeded {len(SAMPLE_INSTRUMENTALS)} instrumentals"}
+
 
 async def admin_auth(authorization: str = Header(None)):
     if not authorization:
