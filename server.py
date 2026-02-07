@@ -42,7 +42,7 @@ api_router = APIRouter(prefix="/api")
 class Instrumental(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
-    mood: str  # Calm, Drums, Spiritual, Soft, Energetic
+    mood: List[str] = []  # Array of moods: Calm, Drums, Spiritual, Soft, Energetic
     duration: int  # in seconds
     duration_formatted: str  # e.g., "3:45"
     is_premium: bool = False
@@ -60,7 +60,7 @@ class Instrumental(BaseModel):
 
 class InstrumentalCreate(BaseModel):
     title: str
-    mood: str
+    mood: List[str] = []  # Array of moods
     duration: int
     duration_formatted: str
     is_premium: bool = False
@@ -75,7 +75,7 @@ class InstrumentalCreate(BaseModel):
 
 class InstrumentalUpdate(BaseModel):
     title: Optional[str] = None
-    mood: Optional[str] = None
+    mood: Optional[List[str]] = None  # Array of moods
     duration: Optional[int] = None
     duration_formatted: Optional[str] = None
     is_premium: Optional[bool] = None
@@ -142,27 +142,27 @@ class AdminLogin(BaseModel):
 
 SAMPLE_INSTRUMENTALS = [
     # Featured Instrumentals (multiple for carousel)
-    {"title": "Mawla Ya Salli - Peaceful", "mood": "Spiritual", "duration": 245, "duration_formatted": "4:05", "is_premium": False, "is_featured": True, "thumbnail": "https://pod-engine-public.nyc3.cdn.digitaloceanspaces.com/images/jHga4s2CmiyaibFlOfJVL25LfdfjqmZpbJ6ehRzVVCQ.png", "thumbnail_color": "#4A3463", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", "ringtone": "https://azjankari.in/audio/song2.mp3", "file_size": 4500000, "preview_start": 60, "preview_end": 90},
-    {"title": "Nasheed of Dawn", "mood": "Calm", "duration": 312, "duration_formatted": "5:12", "is_premium": True, "is_featured": True, "thumbnail_color": "#2D5A4A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", "ringtone": "https://azjankari.in/audio/song2.mp3", "file_size": 5200000, "preview_start": 70, "preview_end": 100},
-    {"title": "Sacred Sunset Melody", "mood": "Soft", "duration": 280, "duration_formatted": "4:40", "is_premium": False, "is_featured": True, "thumbnail_color": "#8B4513", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", "file_size": 4800000, "preview_start": 60, "preview_end": 90},
-    {"title": "Blessed Night Journey", "mood": "Spiritual", "duration": 350, "duration_formatted": "5:50", "is_premium": True, "is_featured": True, "thumbnail_color": "#1E3A5F", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", "file_size": 6000000, "preview_start": 80, "preview_end": 110},
+    {"title": "Mawla Ya Salli - Peaceful", "mood": ["Spiritual", "Calm"], "duration": 245, "duration_formatted": "4:05", "is_premium": False, "is_featured": True, "thumbnail_color": "#4A3463", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", "ringtone": "https://azjankari.in/audio/song2.mp3", "file_size": 4500000, "preview_start": 60, "preview_end": 90},
+    {"title": "Nasheed of Dawn", "mood": ["Calm", "Soft"], "duration": 312, "duration_formatted": "5:12", "is_premium": True, "is_featured": True, "thumbnail_color": "#2D5A4A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", "ringtone": "https://azjankari.in/audio/song2.mp3", "file_size": 5200000, "preview_start": 70, "preview_end": 100},
+    {"title": "Sacred Sunset Melody", "mood": ["Soft", "Spiritual"], "duration": 280, "duration_formatted": "4:40", "is_premium": False, "is_featured": True, "thumbnail_color": "#8B4513", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", "file_size": 4800000, "preview_start": 60, "preview_end": 90},
+    {"title": "Blessed Night Journey", "mood": ["Spiritual"], "duration": 350, "duration_formatted": "5:50", "is_premium": True, "is_featured": True, "thumbnail_color": "#1E3A5F", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", "file_size": 6000000, "preview_start": 80, "preview_end": 110},
     
     # Free Instrumentals
-    {"title": "Morning Dhikr", "mood": "Calm", "duration": 180, "duration_formatted": "3:00", "is_premium": False, "is_featured": False, "thumbnail_color": "#5A4A63", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", "file_size": 3200000, "preview_start": 60, "preview_end": 90},
-    {"title": "Peaceful Heart", "mood": "Soft", "duration": 210, "duration_formatted": "3:30", "is_premium": False, "is_featured": False, "thumbnail_color": "#4A5A63", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", "file_size": 3800000, "preview_start": 60, "preview_end": 90},
-    {"title": "Blessed Sunrise", "mood": "Spiritual", "duration": 195, "duration_formatted": "3:15", "is_premium": False, "is_featured": False, "thumbnail_color": "#634A5A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3", "file_size": 3500000, "preview_start": 60, "preview_end": 90},
-    {"title": "Gentle Breeze", "mood": "Calm", "duration": 240, "duration_formatted": "4:00", "is_premium": False, "is_featured": False, "thumbnail_color": "#4A6357", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3", "file_size": 4200000, "preview_start": 60, "preview_end": 90},
-    {"title": "Silent Prayer", "mood": "Soft", "duration": 165, "duration_formatted": "2:45", "is_premium": False, "is_featured": False, "thumbnail_color": "#574A63", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3", "file_size": 2900000, "preview_start": 60, "preview_end": 90},
+    {"title": "Morning Dhikr", "mood": ["Calm"], "duration": 180, "duration_formatted": "3:00", "is_premium": False, "is_featured": False, "thumbnail_color": "#5A4A63", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", "file_size": 3200000, "preview_start": 60, "preview_end": 90},
+    {"title": "Peaceful Heart", "mood": ["Soft", "Calm"], "duration": 210, "duration_formatted": "3:30", "is_premium": False, "is_featured": False, "thumbnail_color": "#4A5A63", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", "file_size": 3800000, "preview_start": 60, "preview_end": 90},
+    {"title": "Blessed Sunrise", "mood": ["Spiritual", "Soft"], "duration": 195, "duration_formatted": "3:15", "is_premium": False, "is_featured": False, "thumbnail_color": "#634A5A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3", "file_size": 3500000, "preview_start": 60, "preview_end": 90},
+    {"title": "Gentle Breeze", "mood": ["Calm", "Soft"], "duration": 240, "duration_formatted": "4:00", "is_premium": False, "is_featured": False, "thumbnail_color": "#4A6357", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3", "file_size": 4200000, "preview_start": 60, "preview_end": 90},
+    {"title": "Silent Prayer", "mood": ["Soft"], "duration": 165, "duration_formatted": "2:45", "is_premium": False, "is_featured": False, "thumbnail_color": "#574A63", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3", "file_size": 2900000, "preview_start": 60, "preview_end": 90},
     
     # Premium Instrumentals (all with preview ranges)
-    {"title": "Ya Sahib al-Taj", "mood": "Spiritual", "duration": 420, "duration_formatted": "7:00", "is_premium": True, "is_featured": False, "thumbnail_color": "#634A4A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3", "file_size": 7200000, "preview_start": 60, "preview_end": 90},
-    {"title": "Drums of Devotion", "mood": "Drums", "duration": 285, "duration_formatted": "4:45", "is_premium": True, "is_featured": False, "thumbnail_color": "#8B5A2B", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3", "file_size": 5000000, "preview_start": 45, "preview_end": 75},
-    {"title": "Energetic Praise", "mood": "Energetic", "duration": 198, "duration_formatted": "3:18", "is_premium": True, "is_featured": False, "thumbnail_color": "#6B4A3A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3", "file_size": 3600000, "preview_start": 30, "preview_end": 60},
-    {"title": "Sacred Rhythm", "mood": "Drums", "duration": 330, "duration_formatted": "5:30", "is_premium": True, "is_featured": False, "thumbnail_color": "#4A4A63", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3", "file_size": 5800000, "preview_start": 80, "preview_end": 110},
-    {"title": "Night of Peace", "mood": "Calm", "duration": 480, "duration_formatted": "8:00", "is_premium": True, "is_featured": False, "thumbnail_color": "#2A3A4A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3", "file_size": 8200000, "preview_start": 120, "preview_end": 150},
-    {"title": "Joyful Celebration", "mood": "Energetic", "duration": 252, "duration_formatted": "4:12", "is_premium": True, "is_featured": False, "thumbnail_color": "#5A3A4A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3", "file_size": 4500000, "preview_start": 50, "preview_end": 80},
-    {"title": "Soft Meditation", "mood": "Soft", "duration": 360, "duration_formatted": "6:00", "is_premium": True, "is_featured": False, "thumbnail_color": "#3A4A5A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-14.mp3", "file_size": 6300000, "preview_start": 90, "preview_end": 120},
-    {"title": "Divine Harmony", "mood": "Spiritual", "duration": 390, "duration_formatted": "6:30", "is_premium": True, "is_featured": False, "thumbnail_color": "#4A3A5A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3", "file_size": 6800000, "preview_start": 100, "preview_end": 130},
+    {"title": "Ya Sahib al-Taj", "mood": ["Spiritual", "Drums"], "duration": 420, "duration_formatted": "7:00", "is_premium": True, "is_featured": False, "thumbnail_color": "#634A4A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3", "file_size": 7200000, "preview_start": 60, "preview_end": 90},
+    {"title": "Drums of Devotion", "mood": ["Drums", "Energetic"], "duration": 285, "duration_formatted": "4:45", "is_premium": True, "is_featured": False, "thumbnail_color": "#8B5A2B", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3", "file_size": 5000000, "preview_start": 45, "preview_end": 75},
+    {"title": "Energetic Praise", "mood": ["Energetic"], "duration": 198, "duration_formatted": "3:18", "is_premium": True, "is_featured": False, "thumbnail_color": "#6B4A3A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3", "file_size": 3600000, "preview_start": 30, "preview_end": 60},
+    {"title": "Sacred Rhythm", "mood": ["Drums", "Spiritual"], "duration": 330, "duration_formatted": "5:30", "is_premium": True, "is_featured": False, "thumbnail_color": "#4A4A63", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3", "file_size": 5800000, "preview_start": 80, "preview_end": 110},
+    {"title": "Night of Peace", "mood": ["Calm", "Soft", "Spiritual"], "duration": 480, "duration_formatted": "8:00", "is_premium": True, "is_featured": False, "thumbnail_color": "#2A3A4A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3", "file_size": 8200000, "preview_start": 120, "preview_end": 150},
+    {"title": "Joyful Celebration", "mood": ["Energetic", "Drums"], "duration": 252, "duration_formatted": "4:12", "is_premium": True, "is_featured": False, "thumbnail_color": "#5A3A4A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3", "file_size": 4500000, "preview_start": 50, "preview_end": 80},
+    {"title": "Soft Meditation", "mood": ["Soft", "Calm"], "duration": 360, "duration_formatted": "6:00", "is_premium": True, "is_featured": False, "thumbnail_color": "#3A4A5A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-14.mp3", "file_size": 6300000, "preview_start": 90, "preview_end": 120},
+    {"title": "Divine Harmony", "mood": ["Spiritual", "Soft"], "duration": 390, "duration_formatted": "6:30", "is_premium": True, "is_featured": False, "thumbnail_color": "#4A3A5A", "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3", "file_size": 6800000, "preview_start": 100, "preview_end": 130},
 ]
 
 
